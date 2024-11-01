@@ -23,9 +23,14 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use work.types.all;
+use work.regs_types.all;
 
 entity acc is
-    port(
+    generic (
+        width    : natural := 352;      -- width of image.
+        height   : natural := 288       -- height of image.
+    );
+    port (
         clk    : in  bit_t;             -- The clock.
         reset  : in  bit_t;             -- The reset signal. Active high.
         addr   : out halfword_t;        -- Address bus for data.
@@ -39,24 +44,69 @@ entity acc is
 end acc;
 
 --------------------------------------------------------------------------------
--- The desription of the accelerator.
+-- The description of the accelerator.
 --------------------------------------------------------------------------------
 
 architecture rtl of acc is
+    component acc_fsm is
+        generic (
+            width   : natural;             -- width of image.
+            height  : natural              -- height of image.
+        );
+        port (
+            clk     : in  bit_t;             -- The clock.
+            reset   : in  bit_t;             -- The reset signal. Active high.
+            addr    : out halfword_t;        -- Address bus for data.
+            en      : out bit_t;             -- Request signal for data.
+            we      : out bit_t;             -- Read/Write signal for data.
+            start   : in  bit_t;
+            finish  : out bit_t;
+            reading : out std_logic          -- Whether the datapath should save the incoming data
+        );
+    end component;
 
--- All internal signals are defined here
+    component acc_datapath is
+        generic (
+            width   : natural;             -- width of image.
+            height  : natural              -- height of image.
+        );
+        port (
+            clk     : in  bit_t;           -- The clock.
+            reset   : in  bit_t;           -- The reset signal. Active high.
+            dataR   : in  word_t;          -- The data bus.
+            dataW   : out word_t;           -- The data bus.
+            reading : in  std_logic       -- Whether to save dataR or not
+        );
+    end component;
 
+    signal reading_wire : std_logic;
 begin
+    fsm: acc_fsm
+        generic map (
+            width   => width,
+            height  => height
+        )
+        port map (
+            clk     => clk,
+            reset   => reset,
+            addr    => addr,
+            en      => en,
+            we      => we,
+            start   => start,
+            finish  => finish,
+            reading => reading_wire
+        );
 
--- Template for a process
---    myprocess : process(clk)
---        if rising_edge(clk) then
---            if reset = '1' then
---                -- Registers reset
---            else
---                -- Registers update
---            end if;
---        end if;
---    end process myprocess;
-
+    datapath: acc_datapath
+        generic map (
+            width   => width,
+            height  => height
+        )
+        port map (
+            clk     => clk,
+            reset   => reset,
+            dataR   => dataR,
+            dataW   => dataW,
+            reading => reading_wire
+        );
 end rtl;
