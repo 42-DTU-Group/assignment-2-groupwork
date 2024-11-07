@@ -60,8 +60,8 @@ architecture rtl of acc is
             en      : out bit_t;             -- Request signal for data.
             we      : out bit_t;             -- Read/Write signal for data.
             start   : in  bit_t;
-            finish  : out bit_t
-            -- reading : out std_logic          -- Whether the datapath should save the incoming data
+            finish  : out bit_t;
+            reading : out std_logic          -- Whether the datapath should save the incoming data
         );
     end component;
 
@@ -74,12 +74,12 @@ architecture rtl of acc is
             clk     : in  bit_t;           -- The clock.
             reset   : in  bit_t;           -- The reset signal. Active high.
             dataR   : in  word_t;          -- The data bus.
-            dataW   : out word_t           -- The data bus.
-            -- reading : in  std_logic       -- Whether to save dataR or not
+            dataW   : out word_t;           -- The data bus.
+            reading : in  std_logic       -- Whether to save dataR or not
         );
     end component;
 
-    -- signal reading_wire : std_logic;
+    signal reading_wire : std_logic;
 begin
     fsm: acc_fsm
         generic map (
@@ -93,8 +93,8 @@ begin
             en      => en,
             we      => we,
             start   => start,
-            finish  => finish
-            -- reading => reading_wire
+            finish  => finish,
+            reading => reading_wire
         );
 
     datapath: acc_datapath
@@ -106,7 +106,7 @@ begin
             clk     => clk,
             reset   => reset,
             dataR   => dataR,
-            dataW   => dataW
-            -- reading => reading_wire
+            dataW   => dataW,
+            reading => reading_wire
         );
 end rtl;

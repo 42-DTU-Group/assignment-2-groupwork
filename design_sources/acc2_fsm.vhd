@@ -16,8 +16,8 @@ entity acc_fsm is
         en      : out bit_t;             -- Request signal for data.
         we      : out bit_t;             -- Read/Write signal for data.
         start   : in  bit_t;
-        finish  : out bit_t
-        -- reading : out std_logic          -- Whether the datapath should save the incoming data
+        finish  : out bit_t;
+        reading : out std_logic          -- Whether the datapath should save the incoming data
     );
 end acc_fsm;
 
@@ -79,7 +79,7 @@ begin
         en <= '0';
         we <= '0';
         addr <= halfword_zero;
-        -- reading <= '0';
+        reading <= '0';
 
         case state is
             when idle_state =>
@@ -102,7 +102,7 @@ begin
                 else
                     next_state <= read_state;
                 end if;
-                -- reading <= '1'; -- The memory returns the data one clock cycle after we request it - which is every time we are in the write_state
+                reading <= '1'; -- The memory returns the data one clock cycle after we request it - which is every time we are in the write_state
                 addr <= std_logic_vector(write_addr_out);
                 write_addr_in <= write_addr_out + 1;
                 write_addr_en <= '1';
