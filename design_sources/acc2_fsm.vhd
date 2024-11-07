@@ -16,8 +16,8 @@ entity acc_fsm is
         en      : out bit_t;             -- Request signal for data.
         we      : out bit_t;             -- Read/Write signal for data.
         start   : in  bit_t;
-        finish  : out bit_t;
-        reading : out std_logic          -- Whether the datapath should save the incoming data
+        finish  : out bit_t
+        -- reading : out std_logic          -- Whether the datapath should save the incoming data
     );
 end acc_fsm;
 
@@ -40,7 +40,7 @@ architecture rtl of acc_fsm is
     signal read_addr_en, write_addr_en : std_logic;
     signal read_addr_in, read_addr_out, write_addr_in, write_addr_out : unsigned(16 downto 1);
 
-    type statetype is ( idle_state, read_state, write_state );
+    type statetype is ( idle_state, read_state, write_state, finish_state );
     signal state, next_state : statetype;
 begin
     read_addr: reg -- TODO: Move to datapath... right?
@@ -79,18 +79,16 @@ begin
         en <= '0';
         we <= '0';
         addr <= halfword_zero;
-        reading <= '0';
+        -- reading <= '0';
 
         case state is
             when idle_state =>
-                finish <= '1';
+                read_addr_in <= to_unsigned(0, 16); -- the first read address
+                read_addr_en <= '1';
+                write_addr_in <= to_unsigned(25344, 16); -- = 352*288/4 which is the first write address
+                write_addr_en <= '1';
                 if start = '1' then
-                    finish <= '0'; -- ensure that start='1' and finish='1' doesn't overlap, as the simulation stops
                     next_state <= read_state;
-                    read_addr_in <= to_unsigned(0, 16); -- the first read address
-                    read_addr_en <= '1';
-                    write_addr_in <= to_unsigned(25343, 16); -- = 352*288/4 which is the first write address
-                    write_addr_en <= '1';
                 end if;
             when read_state =>
                 addr <= std_logic_vector(read_addr_out);
@@ -99,19 +97,21 @@ begin
                 next_state <= write_state;
                 en <= '1';
             when write_state =>
-                if read_addr_in = 25343 then
-                    next_state <= idle_state;
-                    finish <= '1';
+                if read_addr_out = 25344 then
+                    next_state <= finish_state;
                 else
                     next_state <= read_state;
                 end if;
-                reading <= '1'; -- The memory returns the data one clock cycle after we request it - which is every time we are in the write_state
+                -- reading <= '1'; -- The memory returns the data one clock cycle after we request it - which is every time we are in the write_state
                 addr <= std_logic_vector(write_addr_out);
                 write_addr_in <= write_addr_out + 1;
                 write_addr_en <= '1';
                 en <= '1';
                 we <= '1';
             -- Robust patch, as per lecture's suggestion if a bit flip happens or a hardware crash, so it could recover!
+            when finish_state =>
+                finish <= '1';
+                next_state <= idle_state;
             when others =>
                 next_state <= idle_state;
         end case;
