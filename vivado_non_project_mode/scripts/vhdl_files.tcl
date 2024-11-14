@@ -7,8 +7,11 @@ lappend vhdl_files memory2.vhd
 lappend vhdl_files memory3.vhd
 lappend vhdl_files uart.vhd
 lappend vhdl_files controller.vhd
+lappend vhdl_files array_types.vhd
 lappend vhdl_files reg.vhd
 lappend vhdl_files regs.vhd
+lappend vhdl_files conv.vhd
+lappend vhdl_files convs.vhd
 lappend vhdl_files acc2_datapath.vhd
 lappend vhdl_files acc2_fsm.vhd
 lappend vhdl_files acc2.vhd

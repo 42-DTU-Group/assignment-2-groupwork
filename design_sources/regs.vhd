@@ -1,32 +1,19 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-
-package regs_types is
-    type t_reg_en_array is array (natural range <>, natural range <>) of std_logic;
-    type t_reg_data_array is array (natural range <>, natural range <>) of unsigned(7 downto 0);
-end package;
-
-package body regs_types is
-end package body;
-
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-use work.regs_types.all;
+use work.array_types.all;
 
 entity regs is
     generic (
-        -- n        : natural := 8;                                  -- width of register.
-        width    : natural := 352;                                -- width of register array.
-        height   : natural := 288                                 -- height of register array.
+        width    : natural;                                       -- width of register array.
+        height   : natural                                        -- height of register array.
     );
     port (
         clk      : in  std_logic;                                 -- clock signal.
         reset    : in  std_logic;                                 -- reset signal.
-        en       : in  t_reg_en_array(1 to width, 1 to height);   -- enable signal.
-        data_in  : in  t_reg_data_array(1 to width, 1 to height); -- input data.
-        data_out : out t_reg_data_array(1 to width, 1 to height)  -- output data.
+        en       : in  t_en_array(1 to width, 1 to height);       -- enable signal.
+        data_in  : in  t_2d_data_array(1 to width, 1 to height);  -- input data.
+        data_out : out t_2d_data_array(1 to width, 1 to height)   -- output data.
     );
 end regs;
 

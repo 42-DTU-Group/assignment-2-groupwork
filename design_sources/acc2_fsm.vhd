@@ -2,22 +2,27 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use work.types.all;
-use work.regs_types.all;
 
 entity acc_fsm is
     generic (
-        width   : natural := 352;      -- width of image.
-        height  : natural := 288       -- height of image.
+        width    : natural := 352;      -- width of image.
+        height   : natural := 288       -- height of image.
     );
     port (
-        clk     : in  bit_t;             -- The clock.
-        reset   : in  bit_t;             -- The reset signal. Active high.
-        addr    : out halfword_t;        -- Address bus for data.
-        en      : out bit_t;             -- Request signal for data.
-        we      : out bit_t;             -- Read/Write signal for data.
-        start   : in  bit_t;
-        finish  : out bit_t;
-        reading : out std_logic          -- Whether the datapath should save the incoming data
+        clk      : in  bit_t;             -- The clock.
+        reset    : in  bit_t;             -- The reset signal. Active high.
+        addr     : out halfword_t;        -- Address bus for data.
+        en       : out bit_t;             -- Request signal for data.
+        we       : out bit_t;             -- Read/Write signal for data.
+        start    : in  bit_t;
+        finish   : out bit_t;
+        read1_en : out std_logic;
+        read2_en : out std_logic;
+        shift_en : out std_logic;
+        f_top    : out std_logic;
+        f_left   : out std_logic;
+        f_right  : out std_logic;
+        f_bottom : out std_logic
     );
 end acc_fsm;
 
