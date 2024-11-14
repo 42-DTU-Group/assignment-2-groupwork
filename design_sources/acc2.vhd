@@ -23,7 +23,7 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use work.types.all;
-use work.regs_types.all;
+-- use work.regs_types.all;
 
 entity acc is
     generic (
