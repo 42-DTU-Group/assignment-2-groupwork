@@ -49,10 +49,10 @@ architecture behaviour of conv is
 
         -- Calculate the convolution
         -- D_x(n) = index(1,3)-index_(1,1)+2(index_(2,3)-index_(2,1))+index_(3,3)-index_(3,1)
-        -- D_y(n) = index(1,1)-index_(3,1)+2(index_(2,3)-index_(2,1))+index_(3,3)-index_(3,1)
+        -- D_y(n) = index(1,1)-index_(3,1)+2(index_(1,2)-index_(3,2))+index_(1,3)-index_(3,3)
 
         -- TODO - NEED EXTRA PAIR OF EYES CHECKING IF THIS IS SAME AS THE COMMENT LOGIC UP HERE!
-        D_x <= G_x(2) - G_x(1) + 2 * (G_x(5) - G_x(3)) + G_x(8) - G_x(6);
+        D_x <= G_x(3) - G_x(1) + 2 * (G_x(5) - G_x(4)) + G_x(8) - G_x(6);
         D_y <= G_y(1) - G_y(6) + 2 * (G_y(2) - G_y(7)) + G_y(3) - G_y(8);
 
         -- Calculate the final result
