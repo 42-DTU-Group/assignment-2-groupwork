@@ -5,59 +5,69 @@ use work.array_types.all;
 
 entity conv is
     port (
+        clk      : in  std_logic;
         data_in  : in  t_1d_data_array(1 to 8);
         data_out : out signed(7 downto 0)
     );
 end conv;
 
-
-architecture behaviour of conv is
-
-    -- The input data surrounding the convolution pixel 'c' uses the indices
-    -- 1 2 3
-    -- 4 c 5
-    -- 6 7 8
-
-
-    -- Christine 19-11-2024
-    -- I assume it is like ((1, 2, 3), (4, c, 5), (6, 7, 8)) -> (1, 2, 3, 4, c, 5, 6, 7, 8)?
-    -- But we don't have the middle c index nor include it, right?
-    -- I will use the kernel matrix given by the documentation
-
+architecture pipelined of conv is
     -- Sobel matrix Gx ((-1, 0, 1),(-2,0,2),(-1,0,1))
     -- Sobel matrix Gy ((1,2,1),(0,0,0),(-1,-2,-1))
-
     constant Gx : t_1d_data_array(1 to 8) := (to_signed(1, 8), to_signed(0, 8), to_signed(-1, 8), to_signed(2, 8), to_signed(-2, 8), to_signed(1, 8), to_signed(0, 8), to_signed(-1, 8));
     constant Gy : t_1d_data_array(1 to 8) := (to_signed(1, 8), to_signed(2, 8), to_signed(1, 8), to_signed(0, 8), to_signed(0, 8), to_signed(-1, 8), to_signed(-2, 8), to_signed(-1, 8));
 
-    -- The convolution result
-    signal G_x : t_1d_data_array(1 downto 8);
-    signal G_y : t_1d_data_array(1 downto 8);
+    -- Stage 1: Multiply input data with Sobel matrices
+    signal G_x_stage1 : t_1d_data_array(1 to 8);
+    signal G_y_stage1 : t_1d_data_array(1 to 8);
 
-    -- Derivative in x and y
-    signal D_x : signed(7 downto 0);
-    signal D_y : signed(7 downto 0);
+    -- Buffer registers for Stage 1
+    signal G_x_stage1_buf : t_1d_data_array(1 to 8);
+    signal G_y_stage1_buf : t_1d_data_array(1 to 8);
+
+    -- Stage 2: Sum the results to compute the derivatives
+    signal D_x_stage2 : signed(7 downto 0);
+    signal D_y_stage2 : signed(7 downto 0);
+
+    -- Buffer registers for Stage 2
+    signal D_x_stage2_buf : signed(7 downto 0);
+    signal D_y_stage2_buf : signed(7 downto 0);
+
+    -- Stage 3: Calculate the final result
+    signal result_stage3 : signed(7 downto 0);
+begin
+    -- Stage 1: Multiply input data with Sobel matrices
+    process(clk)
     begin
-    process(data_in)
-    begin
-        -- Convolute with the data_in with each of the Sobel matrices with the result D_x and D_y
-        -- Make a loop
-        for i in 1 to 8 loop
-            G_x(i) <= to_integer(data_in(i)) * Gx(i);
-            G_y(i) <= to_integer(data_in(i)) * Gy(i);
-        end loop;
-
-        -- Calculate the convolution
-        -- D_x(n) = index(1,3)-index_(1,1)+2(index_(2,3)-index_(2,1))+index_(3,3)-index_(3,1)
-        -- D_y(n) = index(1,1)-index_(3,1)+2(index_(1,2)-index_(3,2))+index_(1,3)-index_(3,3)
-
-        -- TODO - NEED EXTRA PAIR OF EYES CHECKING IF THIS IS SAME AS THE COMMENT LOGIC UP HERE!
-        D_x <= G_x(3) - G_x(1) + 2 * (G_x(5) - G_x(4)) + G_x(8) - G_x(6);
-        D_y <= G_y(1) - G_y(6) + 2 * (G_y(2) - G_y(7)) + G_y(3) - G_y(8);
-
-        -- Calculate the final result
-        data_out <= abs(D_x) + abs(D_y);
+        if rising_edge(clk) then
+            for i in 1 to 8 loop
+                G_x_stage1(i) <= data_in(i) * Gx(i);
+                G_y_stage1(i) <= data_in(i) * Gy(i);
+            end loop;
+            -- Buffer registers for Stage 1
+            G_x_stage1_buf <= G_x_stage1;
+            G_y_stage1_buf <= G_y_stage1;
+        end if;
     end process;
 
-end behaviour;
+    -- Stage 2: Sum the results to compute the derivatives
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            D_x_stage2 <= G_x_stage1_buf(3) - G_x_stage1_buf(1) + 2 * (G_x_stage1_buf(5) - G_x_stage1_buf(4)) + G_x_stage1_buf(8) - G_x_stage1_buf(6);
+            D_y_stage2 <= G_y_stage1_buf(1) - G_y_stage1_buf(6) + 2 * (G_y_stage1_buf(2) - G_y_stage1_buf(7)) + G_y_stage1_buf(3) - G_y_stage1_buf(8);
+            -- Buffer registers for Stage 2
+            D_x_stage2_buf <= D_x_stage2;
+            D_y_stage2_buf <= D_y_stage2;
+        end if;
+    end process;
 
+    -- Stage 3: Calculate the final result
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            result_stage3 <= abs(D_x_stage2_buf) + abs(D_y_stage2_buf);
+            data_out <= result_stage3;
+        end if;
+    end process;
+end pipelined;
