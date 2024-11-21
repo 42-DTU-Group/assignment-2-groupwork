@@ -18,11 +18,11 @@ entity acc_fsm is
         finish   : out bit_t;
         read1_en : out std_logic;
         read2_en : out std_logic;
-        shift_en : out std_logic;
-        f_top    : out std_logic;
-        f_left   : out std_logic;
-        f_right  : out std_logic;
-        f_bottom : out std_logic
+        shift_en : out std_logic
+        -- f_top    : out std_logic;
+        -- f_left   : out std_logic;
+        -- f_right  : out std_logic;
+        -- f_bottom : out std_logic
     );
 end acc_fsm;
 
@@ -116,6 +116,7 @@ begin
         en <= '0';
         we <= '0';
         addr <= halfword_zero;
+
 
         case state is
             when idle_state =>
