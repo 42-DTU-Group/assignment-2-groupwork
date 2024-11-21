@@ -37,36 +37,54 @@ architecture rtl of acc_fsm is
         );
         port (
             clk, reset, en : in std_logic;
-            data_in_buffer_1 : in unsigned(n downto 1);
-            data_in_buffer_2 : in unsigned(n downto 1);
-            data_in_buffer_3 : in unsigned(n downto 1);
+            data_in : in unsigned(n downto 1);
             data_out       : out unsigned(n downto 1)
         );
     end component;
 
-    signal read_addr_en, write_addr_en : std_logic;
-    signal read_addr_in_1, read_addr_in_2, read_addr_in_3, read_addr_out, write_addr_in, write_addr_out : unsigned(16 downto 1);
-
+    signal write_addr_en : std_logic;
+    signal read_addr_in_1, read_addr_in_2, read_addr_in_3, write_addr_in, write_addr_out : unsigned(16 downto 1);
+    signal read_addr_en_1, read_addr_en_2, read_addr_en_3 : std_logic;
+    signal read_addr_out_1, read_addr_out_2, read_addr_out_3 : unsigned(16 downto 1);
     -- Made additional state types - Christine
     type statetype is ( idle_state, read_state_1, read_state_2, read_state_3, write_state, finish_state,
     pre_read_state_1, pre_read_state_2, pre_read_state_3, pre_read_state_4, pre_read_state_5, pre_read_state_6);
     signal state, next_state : statetype;
 begin
-    read_addr: reg -- TODO: Move to datapath... right?
+    read_addr_1: reg  -- Register row 1
         generic map (
             n        => 16
         )
         port map (
             clk      => clk,
             reset    => reset,
-            en       => read_addr_en,
-            data_in_buffer_1 => read_addr_in_1,
-            data_in_buffer_2 => read_addr_in_2,
-            data_in_buffer_3 => read_addr_in_3,
-            data_out => read_addr_out
+            en       => read_addr_en_1,
+            data_in => read_addr_in_1,
+            data_out => read_addr_out_1
         );
-
-    write_addr: reg -- TODO: Move to datapath... right?
+    read_addr_2: reg -- Register row 2
+        generic map (
+            n        => 16
+        )
+        port map (
+            clk      => clk,
+            reset    => reset,
+            en       => read_addr_en_2,
+            data_in => read_addr_in_2,
+            data_out => read_addr_out_2
+        );
+    read_addr_3: reg -- Register row 3
+        generic map (
+            n        => 16
+        )
+        port map (
+            clk      => clk,
+            reset    => reset,
+            en       => read_addr_en_3,
+            data_in => read_addr_in_3,
+            data_out => read_addr_out_3
+        );
+    write_addr: reg
         generic map (
             n        => 16
         )
@@ -74,14 +92,12 @@ begin
             clk      => clk,
             reset    => reset,
             en       => write_addr_en,
-            data_in_buffer_1 => read_addr_in_1,
-            data_in_buffer_2 => read_addr_in_2,
-            data_in_buffer_3 => read_addr_in_3,
+            data_in => read_addr_in_1,
             data_out => write_addr_out
         );
 
     -- Next state logic
-    state_logic: process (state, start, read_addr_in_1, read_addr_in_2, read_addr_in_3 read_addr_out, write_addr_out) is
+    state_logic: process (state, start, read_addr_in_1, read_addr_in_2, read_addr_in_3 read_addr_out_1, read_addr_out_2, read_addr_out_3, write_addr_out) is
     begin
         next_state <= state;
         finish <= '0';
@@ -91,7 +107,10 @@ begin
         read_addr_in_2 <= to_unsigned(0, 16);
         read_addr_in_3 <= to_unsigned(0, 16);
 
-        read_addr_en <= '0';
+        read_addr_en_1 <= '0';
+        read_addr_en_2 <= '0';
+        read_addr_en_3 <= '0';
+
         write_addr_in <= to_unsigned(0, 16);
         write_addr_en <= '0';
         en <= '0';
@@ -107,100 +126,169 @@ begin
                 -- the third read address, which is 264th address
                 read_addr_in_3 <= to_unsigned(264, 16);
 
-                read_addr_en <= '1';
-                write_addr_in <= to_unsigned(25344, 16); -- = 352*288/4 which is the first write address
+                read_addr_en_1 <= '0';
+                read_addr_en_2 <= '0';
+                read_addr_en_3 <= '0';
+
+                write_addr_in <= to_unsigned(25432, 16); -- = 352*288/4 which is the first write address
                 write_addr_en <= '1';
                 if start = '1' then
                     next_state <= read_state_1;
                 end if;
 
     -- Ok hear me, Christine, out; we must construct additional ~~pylons~~ states lest we do expensive operation of division checking if divisible by 4
-             when pre_read_state_1 =>
-                 addr <= std_logic_vector(read_addr_out);
-                 read_addr_in_1 <= read_addr_out + 1;
-                 read_addr_en <= '1';
-                 next_state <= pre_read_state_2;
-                 en <= '1';
+            -- PRE-READ BLOCK
+            when pre_read_state_1 =>
+                addr <= std_logic_vector(read_addr_out_1);
+                read_addr_in_1 <= read_addr_out_1 + 1;
+                read_addr_en_1 <= '1';
+                next_state <= pre_read_state_2;
+
+                read1_en <= '0';
+                read2_en <= '0';
+
+                en <= '1';
+
+                read_addr_en_1 <= '1';
+                read_addr_en_2 <= '0';
+                read_addr_en_3 <= '0';
+
             when pre_read_state_2 =>
-                addr <= std_logic_vector(read_addr_out);
-                read_addr_in_2 <= read_addr_out + 1;
-                read_addr_en <= '1';
+                addr <= std_logic_vector(read_addr_out_2);
+                read_addr_in_2 <= read_addr_out_2 + 1;
                 next_state <= pre_read_state_3;
+
+                read1_en <= '1';
+                read2_en <= '0';
+
                 en <= '1';
-                -- Todo - Add the register[3,1] <- dataR
+
+                read_addr_en_1 <= '0';
+                read_addr_en_2 <= '1';
+                read_addr_en_3 <= '0';
+
             when pre_read_state_3 =>
-                addr <= std_logic_vector(read_addr_out);
-                read_addr_in_3 <= read_addr_out + 1;
-                read_addr_en <= '1';
+                addr <= std_logic_vector(read_addr_out_3);
+                read_addr_in_3 <= read_addr_out_3 + 1;
                 next_state <= pre_read_state_4;
+
+                read1_en <= '0';
+                read2_en <= '1';
+
                 en <= '1';
-                -- Todo - Add the register[3,1] <- dataR
+
+                read_addr_en_1 <= '0';
+                read_addr_en_2 <= '0';
+                read_addr_en_3 <= '1';
+
             when pre_read_state_4 =>
-                 addr <= std_logic_vector(read_addr_out);
-                 read_addr_in_1 <= read_addr_out + 1;
-                 read_addr_en <= '1';
-                 next_state <= pre_read_state_5;
-                 en <= '1';
-                -- Todo: Add the shifting logic onto the registers
-                --   reg[1, 1..3] <- reg[2, 1..3]
-                --   reg[2, 1..2] <- reg[3, 1..2]
-                --   reg[2, 3] <- dataR
+                addr <= std_logic_vector(read_addr_out_1);
+                read_addr_in_1 <= read_addr_out_1 + 1;
+                next_state <= pre_read_state_5;
+
+                read1_en <= '0';
+                read2_en <= '0';
+
+                en <= '1';
+                shift_en <= '1'; -- Note - Register shift
+
+                read_addr_en_1 <= '1';
+                read_addr_en_2 <= '0';
+                read_addr_en_3 <= '0';
 
             when pre_read_state_5 =>
-                 addr <= std_logic_vector(read_addr_out);
-                 read_addr_in_2 <= read_addr_out + 1;
-                 read_addr_en <= '1';
-                 next_state <= pre_read_state_6;
-                 en <= '1';
-                                 -- Todo - Add the register[3,1] <- dataR
+                addr <= std_logic_vector(read_addr_out_2);
+                read_addr_in_2 <= read_addr_out_2 + 1;
+                next_state <= pre_read_state_6;
+
+                read1_en <= '1';
+                read2_en <= '0';
+
+                en <= '1';
+
+                read_addr_en_1 <= '0';
+                read_addr_en_2 <= '1';
+                read_addr_en_3 <= '0';
+
             when pre_read_state_6 =>
-                 addr <= std_logic_vector(read_addr_out);
-                 read_addr_in_3 <= read_addr_out + 1;
-                 read_addr_en <= '1';
-                 next_state <= write_state;
-                 en <= '1';
-                                 -- Todo - Add the register[3,2] <- dataR
-            when read_state_1 =>
-                addr <= std_logic_vector(read_addr_out);
-                read_addr_in_1 <= read_addr_out + 1;
-                read_addr_en <= '1';
-                next_state <= read_state_2;
-                en <= '1';
-            when read_state_2 =>
-                addr <= std_logic_vector(read_addr_out);
-                read_addr_in_2 <= read_addr_out + 1;
-                read_addr_en <= '1';
-                next_state <= read_state_3;
-                en <= '1';
-                -- Todo - Add the register[3,1] <- dataR
-            when read_state_3 =>
-                addr <= std_logic_vector(read_addr_out);
-                read_addr_in_3 <= read_addr_out + 1;
-                read_addr_en <= '1';
-                en <= '1';
+                addr <= std_logic_vector(read_addr_out_3);
+                read_addr_in_3 <= read_addr_out_3 + 1;
                 next_state <= write_state;
-                -- Todo - Add the register[3,2] <- dataR
+
+                read1_en <= '0';
+                read2_en <= '1';
+
+                en <= '1';
+
+                read_addr_en_1 <= '0';
+                read_addr_en_2 <= '0';
+                read_addr_en_3 <= '1';
+
+            when read_state_1 =>
+                addr <= std_logic_vector(read_addr_out_1);
+                read_addr_in_1 <= read_addr_out_1 + 1;
+                next_state <= read_state_2;
+                read1_en <= '1';
+
+                read1_en <= '0';
+                read2_en <= '0';
+
+                en <= '1';
+
+                read_addr_en_1 <= '1';
+                read_addr_en_2 <= '0';
+                read_addr_en_3 <= '0';
+
+            when read_state_2 =>
+                addr <= std_logic_vector(read_addr_out_2);
+                read_addr_in_2 <= read_addr_out_2 + 1;
+                next_state <= read_state_3;
+
+                read1_en <= '1';
+                read2_en <= '0';
+
+                en <= '1';
+
+                read_addr_en_1 <= '0';
+                read_addr_en_2 <= '1';
+                read_addr_en_3 <= '0';
+
+            when read_state_3 =>
+                addr <= std_logic_vector(read_addr_out_3);
+                read_addr_in_3 <= read_addr_out_3 + 1;
+                en <= '1';
+
+                read1_en <= '0';
+                read2_en <= '1';
+
+                next_state <= write_state;
+
+                read_addr_en_1 <= '0';
+                read_addr_en_2 <= '0';
+                read_addr_en_3 <= '1';
+
             when write_state =>
-                shift_en <= '0';
-                if read_addr_out = 25344 then
+                read_addr_en_1 <= '0';
+                read_addr_en_2 <= '0';
+                read_addr_en_3 <= '0';
+
+                if read_addr_out_1 = 25256 then
                     next_state <= finish_state;
                 else
                     next_state <= read_state_1;
                 end if;
+                shift_en <= '0'; -- Note: Register shift
                 addr <= std_logic_vector(write_addr_out);
                 write_addr_in <= write_addr_out + 1;
                 write_addr_en <= '1';
+
                 en <= '1';
                 we <= '1';
 
-                -- Todo: Add the shifting logic onto the registers
-                --   reg[1, 1..3] <- reg[2, 1..3]
-                --   reg[2, 1..2] <- reg[3, 1..2]
-                --   reg[2, 3] <- dataR
+                -- Note: We are constantly convoluting thus we don't need to enable separate flag
 
-
-                -- Todo: Add convolution flag/call to to convolute from the convs.vhd & conv.vhd
-
+                read1_en <= '0';
+                read2_en <= '0';
 
             -- Robust patch, as per lecture's suggestion if a bit flip happens or a hardware crash, so it could recover!
             when finish_state =>
@@ -208,6 +296,7 @@ begin
                 next_state <= idle_state;
             when others =>
                 next_state <= idle_state;
+
         end case;
     end process;
 
