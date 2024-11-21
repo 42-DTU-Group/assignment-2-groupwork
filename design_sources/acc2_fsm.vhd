@@ -290,7 +290,6 @@ begin
                 read1_en <= '0';
                 read2_en <= '0';
 
-            -- Robust patch, as per lecture's suggestion if a bit flip happens or a hardware crash, so it could recover!
             when finish_state =>
                 finish <= '1';
                 -- Only reset to idle_state when `start` is low, to prevent starting the same calculation again, and to keep the LED lit
