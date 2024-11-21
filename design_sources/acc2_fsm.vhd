@@ -108,10 +108,13 @@ begin
                 write_addr_en <= '1';
                 en <= '1';
                 we <= '1';
-            -- Robust patch, as per lecture's suggestion if a bit flip happens or a hardware crash, so it could recover!
             when finish_state =>
                 finish <= '1';
-                next_state <= idle_state;
+                -- Only reset to idle_state when `start` is low, to prevent starting the same calculation again, and to keep the LED lit
+                if start = '0' then
+                    next_state <= idle_state;
+                end if;
+            -- Robust patch, as per lecture's suggestion if a bit flip happens or a hardware crash, so it could recover!
             when others =>
                 next_state <= idle_state;
         end case;
