@@ -22,8 +22,7 @@ entity acc_fsm is
         f_top    : out std_logic;
         f_left   : out std_logic;
         f_right  : out std_logic;
-        f_bottom : out std_logic;
-        reading  : out std_logic   -- I will have to ask about this one - Christine
+        f_bottom : out std_logic
     );
 end acc_fsm;
 
@@ -49,7 +48,8 @@ architecture rtl of acc_fsm is
     signal read_addr_in_1, read_addr_in_2, read_addr_in_3, read_addr_out, write_addr_in, write_addr_out : unsigned(16 downto 1);
 
     -- Made additional state types - Christine
-    type statetype is ( idle_state, read_and_shift_state, read_state_1, read_state_2, read_state_3, write_state, finish_state );
+    type statetype is ( idle_state, read_state_1, read_state_2, read_state_3, write_state, finish_state,
+    pre_read_state_1, pre_read_state_2, pre_read_state_3, pre_read_state_4, pre_read_state_5, pre_read_state_6);
     signal state, next_state : statetype;
 begin
     read_addr: reg -- TODO: Move to datapath... right?
@@ -97,7 +97,6 @@ begin
         en <= '0';
         we <= '0';
         addr <= halfword_zero;
-        reading <= '0';
 
         case state is
             when idle_state =>
@@ -116,6 +115,51 @@ begin
                 end if;
 
     -- Ok hear me, Christine, out; we must construct additional ~~pylons~~ states lest we do expensive operation of division checking if divisible by 4
+             when pre_read_state_1 =>
+                 addr <= std_logic_vector(read_addr_out);
+                 read_addr_in_1 <= read_addr_out + 1;
+                 read_addr_en <= '1';
+                 next_state <= pre_read_state_2;
+                 en <= '1';
+            when pre_read_state_2 =>
+                addr <= std_logic_vector(read_addr_out);
+                read_addr_in_2 <= read_addr_out + 1;
+                read_addr_en <= '1';
+                next_state <= pre_read_state_3;
+                en <= '1';
+                -- Todo - Add the register[3,1] <- dataR
+            when pre_read_state_3 =>
+                addr <= std_logic_vector(read_addr_out);
+                read_addr_in_3 <= read_addr_out + 1;
+                read_addr_en <= '1';
+                next_state <= pre_read_state_4;
+                en <= '1';
+                -- Todo - Add the register[3,1] <- dataR
+            when pre_read_state_4 =>
+                 addr <= std_logic_vector(read_addr_out);
+                 read_addr_in_1 <= read_addr_out + 1;
+                 read_addr_en <= '1';
+                 next_state <= pre_read_state_5;
+                 en <= '1';
+                -- Todo: Add the shifting logic onto the registers
+                --   reg[1, 1..3] <- reg[2, 1..3]
+                --   reg[2, 1..2] <- reg[3, 1..2]
+                --   reg[2, 3] <- dataR
+
+            when pre_read_state_5 =>
+                 addr <= std_logic_vector(read_addr_out);
+                 read_addr_in_2 <= read_addr_out + 1;
+                 read_addr_en <= '1';
+                 next_state <= pre_read_state_6;
+                 en <= '1';
+                                 -- Todo - Add the register[3,1] <- dataR
+            when pre_read_state_6 =>
+                 addr <= std_logic_vector(read_addr_out);
+                 read_addr_in_3 <= read_addr_out + 1;
+                 read_addr_en <= '1';
+                 next_state <= write_state;
+                 en <= '1';
+                                 -- Todo - Add the register[3,2] <- dataR
             when read_state_1 =>
                 addr <= std_logic_vector(read_addr_out);
                 read_addr_in_1 <= read_addr_out + 1;
@@ -134,27 +178,8 @@ begin
                 read_addr_in_3 <= read_addr_out + 1;
                 read_addr_en <= '1';
                 en <= '1';
-                -- If we are just starting, we should go to the special pre-read number 4 state with shifting
-                if read_addr_in_1 = 89 then
-                    next_state <= read_and_shift_state;
-                    shift_en <= '1';
-                else
-                    next_state <= write_state;
-                end if;
+                next_state <= write_state;
                 -- Todo - Add the register[3,2] <- dataR
-            when read_and_shift_state =>
-                addr <= std_logic_vector(read_addr_out);
-                read_addr_in_1 <= read_addr_out + 1;
-                read_addr_en <= '1';
-                en <= '1';
-                -- Todo: Add the shifting logic onto the registers
-                --   reg[1, 1..3] <- reg[2, 1..3]
-                --   reg[2, 1..2] <- reg[3, 1..2]
-                --   reg[2, 3] <- dataR
-
-                -- Go back to the read_state_2
-                next_state <= read_state_2;
-
             when write_state =>
                 shift_en <= '0';
                 if read_addr_out = 25344 then
@@ -162,7 +187,6 @@ begin
                 else
                     next_state <= read_state_1;
                 end if;
-                reading <= '1'; -- The memory returns the data one clock cycle after we request it - which is every time we are in the write_state
                 addr <= std_logic_vector(write_addr_out);
                 write_addr_in <= write_addr_out + 1;
                 write_addr_en <= '1';
