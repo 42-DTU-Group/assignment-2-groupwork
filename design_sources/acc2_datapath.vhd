@@ -131,7 +131,7 @@ begin
     end generate gen_regs_shift_data_x;
 
     -- Piping registers to convolution input
-    muxed_signals_for_conv_input: process (regs_out, f_top, f_left, f_right, f_bottom) is
+    muxed_signals_for_conv_input: process (regs_out, dataR, f_top, f_left, f_right, f_bottom) is
     begin
         -- defaults
         convs_input_regs(1, 1) <= regs_out(4, 1);
