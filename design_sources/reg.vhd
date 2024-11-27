@@ -26,14 +26,15 @@ use ieee.numeric_std.all;
 
 entity reg is
     generic (
-        n        : natural := 8              -- width of inputs.
+        n           : natural := 8;             -- width of inputs.
+        reset_value : natural := 0              -- the value the register is reset to
     );
     port (
-        clk      : in  std_logic;            -- clock signal.
-        reset    : in  std_logic;            -- reset signal.
-        en       : in  std_logic;            -- enable signal.
-        data_in  : in  unsigned(n downto 1); -- input data.
-        data_out : out unsigned(n downto 1)  -- output data.
+        clk         : in  std_logic;            -- clock signal.
+        reset       : in  std_logic;            -- reset signal.
+        en          : in  std_logic;            -- enable signal.
+        data_in     : in  unsigned(n downto 1); -- input data.
+        data_out    : out unsigned(n downto 1)  -- output data.
     );
 end reg;
 
@@ -42,7 +43,7 @@ begin
     process(clk,reset)
     begin
         if reset = '1' then
-            data_out <= to_unsigned(0, n);
+            data_out <= to_unsigned(reset_value, n);
         elsif rising_edge (clk) then
             if en = '1' then
                 data_out <= data_in;

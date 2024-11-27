@@ -48,33 +48,23 @@ end acc;
 
 architecture rtl of acc is
     component acc_fsm is
-        generic (
-            width    : natural;             -- width of image.
-            height   : natural              -- height of image.
-        );
         port (
-            clk      : in  bit_t;             -- The clock.
-            reset    : in  bit_t;             -- The reset signal. Active high.
-            addr     : out halfword_t;        -- Address bus for data.
-            en       : out bit_t;             -- Request signal for data.
-            we       : out bit_t;             -- Read/Write signal for data.
-            start    : in  bit_t;
-            finish   : out bit_t;
-            read1_en : in  std_logic;
-            read2_en : in  std_logic;
-            shift_en : in  std_logic;
-            f_top    : in  std_logic;
-            f_left   : in  std_logic;
-            f_right  : in  std_logic;
-            f_bottom : in  std_logic
+            clk          : in  bit_t;             -- The clock.
+            reset        : in  bit_t;             -- The reset signal. Active high.
+            addr         : out halfword_t;        -- Address bus for data.
+            en           : out bit_t;             -- Request signal for data.
+            we           : out bit_t;             -- Read/Write signal for data.
+            start        : in  bit_t;
+            finish       : out bit_t;
+            read1_en     : out std_logic;
+            read2_en     : out std_logic;
+            shift_en     : out std_logic;
+            is_moving    : out std_logic;
+            manual_reset : out std_logic
         );
     end component;
 
     component acc_datapath is
-        generic (
-            width    : natural;             -- width of image.
-            height   : natural              -- height of image.
-        );
         port (
             clk      : in  bit_t;           -- The clock.
             reset    : in  bit_t;           -- The reset signal. Active high.
@@ -90,21 +80,47 @@ architecture rtl of acc is
         );
     end component;
 
-    signal read1_en_wire, read2_en_wire, shift_en_wire, f_top_wire, f_left_wire, f_right_wire, f_bottom_wire : std_logic;
+    component acc_image_location_datapath is
+        generic (
+            width        : natural;
+            height       : natural
+        );
+        port (
+            clk          : in  bit_t;
+            reset        : in  bit_t;
+            is_moving    : in  std_logic;
+            manual_reset : in  std_logic;
+            f_top        : out std_logic;
+            f_left       : out std_logic;
+            f_right      : out std_logic;
+            f_bottom     : out std_logic
+        );
+    end component;
+
+    signal read1_en_wire, read2_en_wire, shift_en_wire, is_moving_wire, manual_reset_wire, f_top_wire, f_left_wire, f_right_wire, f_bottom_wire : std_logic;
 begin
     fsm: acc_fsm
-        generic map (
-            width    => width,
-            height   => height
-        )
+        port map (
+            clk          => clk,
+            reset        => reset,
+            addr         => addr,
+            en           => en,
+            we           => we,
+            start        => start,
+            finish       => finish,
+            read1_en     => read1_en_wire,
+            read2_en     => read2_en_wire,
+            shift_en     => shift_en_wire,
+            is_moving    => is_moving_wire,
+            manual_reset => manual_reset_wire
+        );
+
+    datapath: acc_datapath
         port map (
             clk      => clk,
             reset    => reset,
-            addr     => addr,
-            en       => en,
-            we       => we,
-            start    => start,
-            finish   => finish,
+            dataR    => dataR,
+            dataW    => dataW,
             read1_en => read1_en_wire,
             read2_en => read2_en_wire,
             shift_en => shift_en_wire,
@@ -114,22 +130,19 @@ begin
             f_bottom => f_bottom_wire
         );
 
-    datapath: acc_datapath
+    image_location: acc_image_location_datapath
         generic map (
-            width   => width,
-            height  => height
+            width        => width,
+            height       => height
         )
         port map (
-            clk     => clk,
-            reset   => reset,
-            dataR   => dataR,
-            dataW   => dataW,
-            read1_en => read1_en_wire,
-            read2_en => read2_en_wire,
-            shift_en => shift_en_wire,
-            f_top    => f_top_wire,
-            f_left   => f_left_wire,
-            f_right  => f_right_wire,
-            f_bottom => f_bottom_wire
+            clk          => clk,
+            reset        => reset,
+            is_moving    => is_moving_wire,
+            manual_reset => manual_reset_wire,
+            f_top        => f_top_wire,
+            f_left       => f_left_wire,
+            f_right      => f_right_wire,
+            f_bottom     => f_bottom_wire
         );
 end rtl;

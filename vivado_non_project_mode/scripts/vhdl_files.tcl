@@ -12,6 +12,7 @@ lappend vhdl_files reg.vhd
 lappend vhdl_files regs.vhd
 lappend vhdl_files conv.vhd
 lappend vhdl_files convs.vhd
+lappend vhdl_files acc2_image_location_datapath.vhd
 lappend vhdl_files acc2_datapath.vhd
 lappend vhdl_files acc2_fsm.vhd
 lappend vhdl_files acc2.vhd

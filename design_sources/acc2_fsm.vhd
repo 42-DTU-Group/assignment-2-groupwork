@@ -4,25 +4,19 @@ use IEEE.numeric_std.all;
 use work.types.all;
 
 entity acc_fsm is
-    generic (
-        width    : natural := 352;      -- width of image.
-        height   : natural := 288       -- height of image.
-    );
     port (
-        clk      : in  bit_t;             -- The clock.
-        reset    : in  bit_t;             -- The reset signal. Active high.
-        addr     : out halfword_t;        -- Address bus for data.
-        en       : out bit_t;             -- Request signal for data.
-        we       : out bit_t;             -- Read/Write signal for data.
-        start    : in  bit_t;
-        finish   : out bit_t;
-        read1_en : out std_logic;
-        read2_en : out std_logic;
-        shift_en : out std_logic
-        -- f_top    : out std_logic;
-        -- f_left   : out std_logic;
-        -- f_right  : out std_logic;
-        -- f_bottom : out std_logic
+        clk          : in  bit_t;             -- The clock.
+        reset        : in  bit_t;             -- The reset signal. Active high.
+        addr         : out halfword_t;        -- Address bus for data.
+        en           : out bit_t;             -- Request signal for data.
+        we           : out bit_t;             -- Read/Write signal for data.
+        start        : in  bit_t;
+        finish       : out bit_t;
+        read1_en     : out std_logic;
+        read2_en     : out std_logic;
+        shift_en     : out std_logic;
+        is_moving    : out std_logic;
+        manual_reset : out std_logic
     );
 end acc_fsm;
 
@@ -121,8 +115,13 @@ begin
         read2_en <= '0';
         shift_en <= '0';
 
+        is_moving <= '0';
+        manual_reset <= '0';
+
         case state is
             when idle_state =>
+                manual_reset <= '1';
+
                 -- the first read address, which is 88th address
                 read_addr_in_1 <= to_unsigned(88, 16);
                 -- the second read address, which is 176th address
@@ -235,6 +234,7 @@ begin
                 write_addr_in <= write_addr_out + 1;
                 write_addr_en <= '1';
 
+                is_moving <= '1';
                 shift_en <= '1'; -- Note: Register shift
                 en <= '1';
                 we <= '1';
