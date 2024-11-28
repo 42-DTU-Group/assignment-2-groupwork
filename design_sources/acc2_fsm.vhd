@@ -122,12 +122,12 @@ begin
             when idle_state =>
                 manual_reset <= '1';
 
-                -- the first read address, which is 88th address
-                read_addr_in_1 <= to_unsigned(88, 16);
-                -- the second read address, which is 176th address
-                read_addr_in_2 <= to_unsigned(176, 16);
-                -- the third read address, which is 264th address
-                read_addr_in_3 <= to_unsigned(264, 16);
+                -- the first read address, which is 0th address
+                read_addr_in_1 <= to_unsigned(0, 16);
+                -- the second read address, which is 88th address
+                read_addr_in_2 <= to_unsigned(88, 16);
+                -- the third read address, which is 176th address
+                read_addr_in_3 <= to_unsigned(176, 16);
 
                 read_addr_en_1 <= '1';
                 read_addr_en_2 <= '1';
@@ -241,7 +241,7 @@ begin
 
                 -- Note: We are constantly convoluting thus we don't need to enable separate flag
 
-                if read_addr_out_1 = 25256 then -- TODO: Why is this not read_addr_out_2?
+                if read_addr_out_2 = 25257 then -- 25256+1
                     next_state <= finish_state;
                 else
                     next_state <= read_state_1;
