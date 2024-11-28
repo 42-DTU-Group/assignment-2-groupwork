@@ -59,7 +59,7 @@ begin
 
     -- Calculate the final result
     result <= unsigned(abs(D_x) + abs(D_y));
-    data_out <= resize(result, 8) when (result <= 255) else to_unsigned(255, 8);
+    data_out <= result(n downto n-7);
 
     -- TODO: Make sure the output is cut off at the correct number of bits
     -- TODO: Verify that we are supposed to crop the result at 255 and not... idk. divide it to make 255 equal the max theoretical value of the calculation?
