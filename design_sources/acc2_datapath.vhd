@@ -130,6 +130,14 @@ begin
         end generate gen_regs_shift_data_y;
     end generate gen_regs_shift_data_x;
 
+    -- Drive the unused registers
+    -- TODO: Consider not generating the registers... but then we need to regs arrays with different names, etc. etc.
+    gen_regs_unused:
+    for x in 9 to 12 generate
+        regs_in(x, 3) <= to_unsigned(0, 8);
+        regs_en(x, 3) <= '0';
+    end generate gen_regs_unused;
+
     -- Piping registers to convolution input
     muxed_signals_for_conv_input: process (regs_out, dataR, f_top, f_left, f_right, f_bottom) is
     begin
