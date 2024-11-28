@@ -41,17 +41,17 @@ begin
 
     -- TODO: Verify that 11 bits (signed) is enough to store the theoretical max value of the calculation
     -- TODO: Optimization: Do bit manipulations instead of 2* (unless vivado already does it)
-    sub_result_1 <= resize(signed(data_in(3)), n) - resize(signed(data_in(1)), n);
-    sub_result_2 <= resize(signed(data_in(5)), n) - resize(signed(data_in(4)), n);
+    sub_result_1 <= signed(resize(data_in(3), n)) - signed(resize(data_in(1), n));
+    sub_result_2 <= signed(resize(data_in(5), n)) - signed(resize(data_in(4), n));
     sub_result_2_x2 <= sub_result_2(n) & sub_result_2(n-2 downto 1) & '0';
-    -- sub_result_2_x2 <= 2*sub_result_2;
-    sub_result_3 <= resize(signed(data_in(8)), n) - resize(signed(data_in(6)), n);
+    -- sub_result_2_x2 <= resize(to_signed(2, 11)*sub_result_2, 11);
+    sub_result_3 <= signed(resize(data_in(8), n)) - signed(resize(data_in(6), n));
 
-    sub_result_4 <= resize(signed(data_in(1)), n) - resize(signed(data_in(6)), n);
-    sub_result_5 <= resize(signed(data_in(2)), n) - resize(signed(data_in(7)), n);
+    sub_result_4 <= signed(resize(data_in(1), n)) - signed(resize(data_in(6), n));
+    sub_result_5 <= signed(resize(data_in(2), n)) - signed(resize(data_in(7), n));
     sub_result_5_x2 <= sub_result_5(n) & sub_result_5(n-2 downto 1) & '0';
-    -- sub_result_5_x2 <= 2*sub_result_5;
-    sub_result_6 <= resize(signed(data_in(3)), n) - resize(signed(data_in(8)), n);
+    -- sub_result_5_x2 <= resize(to_signed(2, 11)*sub_result_5, 11);
+    sub_result_6 <= signed(resize(data_in(3), n)) - signed(resize(data_in(8), n));
 
     -- D_x <=  sub_result_1 + 2*sub_result_2 + sub_result_3;
     D_x <=  sub_result_1 + sub_result_2_x2 + sub_result_3;
