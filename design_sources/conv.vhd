@@ -5,7 +5,7 @@ use work.array_types.all;
 
 entity conv is
     generic (
-        n        : natural := 11                -- number of bits in signed integers
+        n        : natural := 32                -- number of bits in signed integers
     );
     port (
         data_in  : in  t_1d_data_array(1 to 8);
@@ -32,7 +32,7 @@ architecture behaviour of conv is
     signal D_x, D_y,
         sub_result_1, sub_result_2, sub_result_3, sub_result_4, sub_result_5, sub_result_6,
         sub_result_2_x2, sub_result_5_x2 : signed(n downto 1);
-    signal result : unsigned(n downto 1);
+    signal result_pre_roudning, result_buffer : unsigned(n downto 1);
 begin
 
     -- Calculate the convolution
@@ -58,8 +58,9 @@ begin
     D_y <=  sub_result_4 + sub_result_5_x2 + sub_result_6;
 
     -- Calculate the final result
-    result <= unsigned(abs(D_x) + abs(D_y));
-    data_out <= result(n downto n-7);
+    result_pre_roudning <= unsigned(abs(D_x) + abs(D_y));
+    result_buffer <= (result_pre_roudning sll 1) + (result_pre_roudning sll 2) + (result_pre_roudning sll 4) + (result_pre_roudning sll 6) + (result_pre_roudning sll 8);
+    data_out <= result_buffer(19 downto 12);
 
     -- TODO: Make sure the output is cut off at the correct number of bits
     -- TODO: Verify that we are supposed to crop the result at 255 and not... idk. divide it to make 255 equal the max theoretical value of the calculation?
