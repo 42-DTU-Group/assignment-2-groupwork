@@ -33,5 +33,8 @@ foreach file $vhdl_files {
 foreach file [ glob -nocomplain "$constraintsDir/*.xdc" ] {
     read_xdc "$file"
 }
+foreach file [ glob -nocomplain "$srcDir/*/*.xci" ] {
+    read_ip "$file"
+}
 
 start_gui
