@@ -55,7 +55,7 @@ begin
     y_coord: reg  -- Register row 1
         generic map (
             n           => 9,
-            reset_value => 1
+            reset_value => 0
         )
         port map (
             clk         => clk,
@@ -76,5 +76,5 @@ begin
     f_top    <= '1' when (y_coord_out = to_unsigned(0, 9)) else '0';
     f_left   <= '1' when (x_coord_out = to_unsigned(0, 9)) else '0';
     f_right  <= '1' when (x_coord_out = to_unsigned(width/4-1, 9)) else '0';
-    f_bottom <= '1' when (y_coord_out = to_unsigned(height/4-1, 9)) else '0';
+    f_bottom <= '1' when (y_coord_out = to_unsigned(height-1, 9)) else '0';
 end rtl;
