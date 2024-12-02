@@ -155,6 +155,7 @@ begin
                 read_addr_in_3 <= read_addr_out_3 + 1;
                 read_addr_en_3 <= '1';
 
+                read2_en <= '1';
                 en <= '1';
 
                 next_state <= pre_read_state_3;
@@ -177,6 +178,8 @@ begin
                 read_addr_en_3 <= '1';
 
                 en <= '1';
+                read2_en <= '1';
+                shift_en <= '0';
 
                 next_state <= write_state;
 
@@ -184,6 +187,7 @@ begin
                 addr <= std_logic_vector(read_addr_out_1);
                 read_addr_in_1 <= read_addr_out_1 + 1;
                 read_addr_en_1 <= '1';
+                shift_en <= '0';
 
                 we <= '0';
                 en <= '1';
@@ -197,8 +201,6 @@ begin
 
                 read1_en <= '1';
                 en <= '1';
-
-                next_state <= read_state_3;
 
                 if read_addr_out_3 < 25344 then
                     next_state <= read_state_3;
@@ -226,6 +228,8 @@ begin
                 addr <= std_logic_vector(read_addr_out_3);
                 read_addr_in_3 <= read_addr_out_3 + 1;
                 read_addr_en_3 <= '1';
+                shift_en <= '0';
+
 
                 read2_en <= '1';
                 en <= '1';
@@ -235,12 +239,19 @@ begin
 
             when read_2_top_row_state =>
                 addr <= std_logic_vector(read_addr_out_2);
-                read_addr_in_2 <= read_addr_in_2 + 1;
+                read_addr_in_2 <= read_addr_out_2 + 1;
                 read_addr_en_2 <= '1';
-                we <= '0';
+                shift_en <= '0';
                 en <= '1';
 
-                next_state <= read_state_3;
+                -- Note: Ensure proper transition to the next state
+                if read_addr_out_2 < 88 then
+                    next_state <= read_state_3;
+                else
+                    next_state <= write_state;
+                end if;
+
+
 
 
 
@@ -253,6 +264,7 @@ begin
                 shift_en <= '1'; -- Note: Register shift
                 en <= '1';
                 we <= '1';
+                shift_en <= '0';
 
                 -- Note: We are constantly convoluting thus we don't need to enable separate flag
 
