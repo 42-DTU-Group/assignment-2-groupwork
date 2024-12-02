@@ -55,8 +55,6 @@ architecture rtl of acc_datapath is
     signal convs_out         : t_1d_data_array(1 to 4);
     signal convs_input_regs  : t_2d_data_array(1 to 6, 1 to 3); -- signals replicating regs_out but after applying e.g. f_left
 
-    signal bottom_middle_mux : unsigned(7 downto 0);
-
 begin
     -- create registers
     buf: regs
@@ -134,11 +132,10 @@ for x in 1 to 2 generate
         -- Note: Christine : I hope that I didn't hecc this up.
         gen_regs_shift_bottom_middle:
         if ((x = 2) and (y = 2)) generate
-            bottom_middle_mux <= regs_out(1+4*x, y) when f_bottom = '0' else unsigned(dataR(7 downto 0));
-            regs_in(1+4*(x-1), y) <= bottom_middle_mux;
-            regs_in(2+4*(x-1), y) <= regs_out(2+4*x, y);
-            regs_in(3+4*(x-1), y) <= regs_out(3+4*x, y);
-            regs_in(4+4*(x-1), y) <= regs_out(4+4*x, y);
+            regs_in(1+4*(x-1), y) <= regs_out(1+4*x, y) when f_bottom = '0' else unsigned(dataR(7 downto 0));
+            regs_in(2+4*(x-1), y) <= regs_out(2+4*x, y) when f_bottom = '0' else unsigned(dataR(15 downto 8));
+            regs_in(3+4*(x-1), y) <= regs_out(3+4*x, y) when f_bottom = '0' else unsigned(dataR(23 downto 16));
+            regs_in(4+4*(x-1), y) <= regs_out(4+4*x, y) when f_bottom = '0' else unsigned(dataR(31 downto 24));
         end generate gen_regs_shift_bottom_middle;
     end generate gen_regs_shift_data_y;
 end generate gen_regs_shift_data_x;

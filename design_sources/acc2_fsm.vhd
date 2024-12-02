@@ -216,7 +216,7 @@ begin
                 en <= '1';
                 we <= '1';
 
-                if read_addr_out_2 = 25344 then
+                if read_addr_out_2 >= 25344 then
                     next_state <= final_write_word_state;
                 else
                     next_state <= read_state_1;
