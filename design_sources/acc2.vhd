@@ -56,9 +56,12 @@ architecture rtl of acc is
             we           : out bit_t;             -- Read/Write signal for data.
             start        : in  bit_t;
             finish       : out bit_t;
-            read1_en     : out std_logic;
             read2_en     : out std_logic;
             shift_en     : out std_logic;
+            fifo1_read_en  : out std_logic;
+            fifo2_read_en  : out std_logic;
+            fifo1_write_en : out std_logic;
+            fifo2_write_en : out std_logic;
             is_moving    : out std_logic;
             manual_reset : out std_logic
         );
@@ -70,9 +73,12 @@ architecture rtl of acc is
             reset    : in  bit_t;           -- The reset signal. Active high.
             dataR    : in  word_t;          -- The data bus.
             dataW    : out word_t;          -- The data bus.
-            read1_en : in  std_logic;
             read2_en : in  std_logic;
             shift_en : in  std_logic;
+            fifo1_read_en  : in std_logic;
+            fifo2_read_en  : in std_logic;
+            fifo1_write_en : in std_logic;
+            fifo2_write_en : in std_logic;
             f_top    : in  std_logic;
             f_left   : in  std_logic;
             f_right  : in  std_logic;
@@ -97,7 +103,7 @@ architecture rtl of acc is
         );
     end component;
 
-    signal read1_en_wire, read2_en_wire, shift_en_wire, is_moving_wire, manual_reset_wire, f_top_wire, f_left_wire, f_right_wire, f_bottom_wire : std_logic;
+    signal read2_en_wire, shift_en_wire, is_moving_wire, manual_reset_wire, f_top_wire, f_left_wire, f_right_wire, f_bottom_wire, fifo1_read_en_wire, fifo2_read_en_wire, fifo1_write_en_wire, fifo2_write_en_wire : std_logic;
 begin
     fsm: acc_fsm
         port map (
@@ -108,9 +114,12 @@ begin
             we           => we,
             start        => start,
             finish       => finish,
-            read1_en     => read1_en_wire,
             read2_en     => read2_en_wire,
             shift_en     => shift_en_wire,
+            fifo1_read_en  => fifo1_read_en_wire,
+            fifo2_read_en  => fifo2_read_en_wire,
+            fifo1_write_en => fifo1_write_en_wire,
+            fifo2_write_en => fifo2_write_en_wire,
             is_moving    => is_moving_wire,
             manual_reset => manual_reset_wire
         );
@@ -121,9 +130,12 @@ begin
             reset    => reset,
             dataR    => dataR,
             dataW    => dataW,
-            read1_en => read1_en_wire,
             read2_en => read2_en_wire,
             shift_en => shift_en_wire,
+            fifo1_read_en  => fifo1_read_en_wire,
+            fifo2_read_en  => fifo2_read_en_wire,
+            fifo1_write_en => fifo1_write_en_wire,
+            fifo2_write_en => fifo2_write_en_wire,
             f_top    => f_top_wire,
             f_left   => f_left_wire,
             f_right  => f_right_wire,
