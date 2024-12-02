@@ -54,6 +54,9 @@ architecture rtl of acc_datapath is
     signal convs_in          : t_2d_data_array(1 to 4, 1 to 8);
     signal convs_out         : t_1d_data_array(1 to 4);
     signal convs_input_regs  : t_2d_data_array(1 to 6, 1 to 3); -- signals replicating regs_out but after applying e.g. f_left
+
+    signal bottom_middle_mux : unsigned(7 downto 0);
+
 begin
     -- create registers
     buf: regs
@@ -107,28 +110,38 @@ begin
         regs_in(12, y) <= unsigned(dataR(31 downto 24));
     end generate gen_dataR_to_regs;
 
-    -- Pipe data for shifting
-    gen_regs_shift_data_x:
-    for x in 1 to 2 generate
-        gen_regs_shift_data_y:
-        for y in 1 to 3 generate
-            gen_regs_shift_not_bottom_right_corner:
-            if not ((x = 2) and (y = 3)) generate
-                regs_in(1+4*(x-1), y) <= regs_out(1+4*x, y);
-                regs_in(2+4*(x-1), y) <= regs_out(2+4*x, y);
-                regs_in(3+4*(x-1), y) <= regs_out(3+4*x, y);
-                regs_in(4+4*(x-1), y) <= regs_out(4+4*x, y);
-            end generate gen_regs_shift_not_bottom_right_corner;
+-- Pipe data for shifting
+gen_regs_shift_data_x:
+for x in 1 to 2 generate
+    gen_regs_shift_data_y:
+    for y in 1 to 3 generate
+        gen_regs_shift_not_bottom_right_corner:
+        if not ((x = 2) and (y = 3)) and not ((x = 2) and (y = 2)) generate
+            regs_in(1+4*(x-1), y) <= regs_out(1+4*x, y);
+            regs_in(2+4*(x-1), y) <= regs_out(2+4*x, y);
+            regs_in(3+4*(x-1), y) <= regs_out(3+4*x, y);
+            regs_in(4+4*(x-1), y) <= regs_out(4+4*x, y);
+        end generate gen_regs_shift_not_bottom_right_corner;
 
-            gen_regs_shift_bottom_right_corner:
-            if ((x = 2) and (y = 3)) generate
-                regs_in(1+4*(x-1), y) <= unsigned(dataR(7 downto 0));
-                regs_in(2+4*(x-1), y) <= unsigned(dataR(15 downto 8));
-                regs_in(3+4*(x-1), y) <= unsigned(dataR(23 downto 16));
-                regs_in(4+4*(x-1), y) <= unsigned(dataR(31 downto 24));
-            end generate gen_regs_shift_bottom_right_corner;
-        end generate gen_regs_shift_data_y;
-    end generate gen_regs_shift_data_x;
+        gen_regs_shift_bottom_right_corner:
+        if ((x = 2) and (y = 3)) generate
+            regs_in(1+4*(x-1), y) <= unsigned(dataR(7 downto 0));
+            regs_in(2+4*(x-1), y) <= unsigned(dataR(15 downto 8));
+            regs_in(3+4*(x-1), y) <= unsigned(dataR(23 downto 16));
+            regs_in(4+4*(x-1), y) <= unsigned(dataR(31 downto 24));
+        end generate gen_regs_shift_bottom_right_corner;
+
+        -- Note: Christine : I hope that I didn't hecc this up.
+        gen_regs_shift_bottom_middle:
+        if ((x = 2) and (y = 2)) generate
+            bottom_middle_mux <= regs_out(1+4*x, y) when f_bottom = '0' else unsigned(dataR(7 downto 0));
+            regs_in(1+4*(x-1), y) <= bottom_middle_mux;
+            regs_in(2+4*(x-1), y) <= regs_out(2+4*x, y);
+            regs_in(3+4*(x-1), y) <= regs_out(3+4*x, y);
+            regs_in(4+4*(x-1), y) <= regs_out(4+4*x, y);
+        end generate gen_regs_shift_bottom_middle;
+    end generate gen_regs_shift_data_y;
+end generate gen_regs_shift_data_x;
 
     -- Drive the unused registers
     -- TODO: Consider not generating the registers... but then we need to regs arrays with different names, etc. etc.
@@ -176,7 +189,8 @@ begin
             convs_input_regs(3, 3) <= regs_out(6, 2);
             convs_input_regs(4, 3) <= regs_out(7, 2);
             convs_input_regs(5, 3) <= regs_out(8, 2);
-            convs_input_regs(6, 3) <= regs_out(9, 2);
+            convs_input_regs(6, 2) <= unsigned(dataR(7 downto 0));
+            convs_input_regs(6, 3) <= unsigned(dataR(7 downto 0));
         end if;
         if f_left = '1' then
             convs_input_regs(1, 1) <= regs_out(5, 1);

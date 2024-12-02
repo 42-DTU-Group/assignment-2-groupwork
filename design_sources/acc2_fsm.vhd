@@ -42,7 +42,7 @@ architecture rtl of acc_fsm is
     signal read_addr_out_1, read_addr_out_2, read_addr_out_3 : unsigned(16 downto 1);
     -- Made additional state types - Christine
     type statetype is ( idle_state, read_state_1, read_state_2, read_state_3, write_state, finish_state,
-    pre_read_state_1, pre_read_state_2, pre_read_state_3, pre_read_state_4, pre_read_state_5, pre_read_state_6);
+    pre_read_state_1, pre_read_state_2, pre_read_state_3, pre_read_state_4, pre_read_state_5, pre_read_state_6, read_2_top_row_state, write_bottom_row_state, final_write_word_state);
     signal state, next_state : statetype;
 begin
     read_addr_1: reg  -- Register row 1
@@ -125,15 +125,15 @@ begin
                 -- the first read address, which is 0th address
                 read_addr_in_1 <= to_unsigned(0, 16);
                 -- the second read address, which is 88th address
-                read_addr_in_2 <= to_unsigned(88, 16);
+                read_addr_in_2 <= to_unsigned(0, 16);
                 -- the third read address, which is 176th address
-                read_addr_in_3 <= to_unsigned(176, 16);
+                read_addr_in_3 <= to_unsigned(88, 16);
 
                 read_addr_en_1 <= '1';
                 read_addr_en_2 <= '1';
                 read_addr_en_3 <= '1';
 
-                write_addr_in <= to_unsigned(25432, 16); -- = 352*288/4+88 which is the first write address
+                write_addr_in <= to_unsigned(25344, 16);
                 write_addr_en <= '1';
                 if start = '1' then
                     next_state <= pre_read_state_1;
@@ -142,60 +142,40 @@ begin
     -- Ok hear me, Christine, out; we must construct additional ~~pylons~~ states lest we do expensive operation of division checking if divisible by 4
             -- PRE-READ BLOCK
             when pre_read_state_1 =>
-                addr <= std_logic_vector(read_addr_out_1);
-                read_addr_in_1 <= read_addr_out_1 + 1;
-                read_addr_en_1 <= '1';
+                addr <= std_logic_vector(read_addr_out_2);
+                read_addr_in_2 <= read_addr_out_2 + 1;
+                read_addr_en_2 <= '1';
 
                 en <= '1';
 
                 next_state <= pre_read_state_2;
 
             when pre_read_state_2 =>
-                addr <= std_logic_vector(read_addr_out_2);
-                read_addr_in_2 <= read_addr_out_2 + 1;
-                read_addr_en_2 <= '1';
+                addr <= std_logic_vector(read_addr_out_3);
+                read_addr_in_3 <= read_addr_out_3 + 1;
+                read_addr_en_3 <= '1';
 
-                read1_en <= '1';
                 en <= '1';
 
                 next_state <= pre_read_state_3;
 
             when pre_read_state_3 =>
-                addr <= std_logic_vector(read_addr_out_3);
-                read_addr_in_3 <= read_addr_out_3 + 1;
-                read_addr_en_3 <= '1';
-
-                read2_en <= '1';
-                en <= '1';
-
-                next_state <= pre_read_state_4;
-
-            when pre_read_state_4 =>
-                addr <= std_logic_vector(read_addr_out_1);
-                read_addr_in_1 <= read_addr_out_1 + 1;
-                read_addr_en_1 <= '1';
-
-                shift_en <= '1'; -- Note - Register shift
-                en <= '1';
-
-                next_state <= pre_read_state_5;
-
-            when pre_read_state_5 =>
                 addr <= std_logic_vector(read_addr_out_2);
                 read_addr_in_2 <= read_addr_out_2 + 1;
                 read_addr_en_2 <= '1';
 
-                read1_en <= '1';
                 en <= '1';
 
-                next_state <= pre_read_state_6;
+                shift_en <= '1'; -- Note - Register shift
 
-            when pre_read_state_6 =>
+
+                next_state <= pre_read_state_4;
+
+            when pre_read_state_4 =>
                 addr <= std_logic_vector(read_addr_out_3);
                 read_addr_in_3 <= read_addr_out_3 + 1;
                 read_addr_en_3 <= '1';
 
-                read2_en <= '1';
                 en <= '1';
 
                 next_state <= write_state;
@@ -205,6 +185,7 @@ begin
                 read_addr_in_1 <= read_addr_out_1 + 1;
                 read_addr_en_1 <= '1';
 
+                we <= '0';
                 en <= '1';
 
                 next_state <= read_state_2;
@@ -219,6 +200,28 @@ begin
 
                 next_state <= read_state_3;
 
+                if read_addr_out_3 < 25344 then
+                    next_state <= read_state_3;
+                else
+                    next_state <= write_bottom_row_state;
+                end if;
+
+            when write_bottom_row_state =>
+                addr <= std_logic_vector(write_addr_out);
+                write_addr_in <= write_addr_out + 1;
+                write_addr_en <= '1';
+
+                is_moving <= '1';
+                shift_en <= '1'; -- Note: Register shift
+                en <= '1';
+                we <= '1';
+
+                if read_addr_out_2 = 25344 then
+                    next_state <= final_write_word_state;
+                else
+                    next_state <= read_state_1;
+                end if;
+
             when read_state_3 =>
                 addr <= std_logic_vector(read_addr_out_3);
                 read_addr_in_3 <= read_addr_out_3 + 1;
@@ -226,8 +229,20 @@ begin
 
                 read2_en <= '1';
                 en <= '1';
+                we <= '0';
 
                 next_state <= write_state;
+
+            when read_2_top_row_state =>
+                addr <= std_logic_vector(read_addr_out_2);
+                read_addr_in_2 <= read_addr_in_2 + 1;
+                read_addr_en_2 <= '1';
+                we <= '0';
+                en <= '1';
+
+                next_state <= read_state_3;
+
+
 
             when write_state =>
                 addr <= std_logic_vector(write_addr_out);
@@ -241,11 +256,19 @@ begin
 
                 -- Note: We are constantly convoluting thus we don't need to enable separate flag
 
-                if read_addr_out_2 = 25257 then -- 25256+1
-                    next_state <= finish_state;
+                if read_addr_out_2 < 88 then --
+                    next_state <= read_2_top_row_state;
                 else
                     next_state <= read_state_1;
                 end if;
+
+            when final_write_word_state =>
+                addr <= std_logic_vector(write_addr_out);
+                en <= '1';
+                we <= '1';
+
+                next_state <= finish_state;
+
 
             when finish_state =>
                 finish <= '1';
