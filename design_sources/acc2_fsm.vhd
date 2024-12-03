@@ -146,6 +146,8 @@ begin
                 read_addr_in_2 <= read_addr_out_2 + 1;
                 read_addr_en_2 <= '1';
 
+                read1_en <= '1';
+
                 en <= '1';
 
                 next_state <= pre_read_state_2;
@@ -167,8 +169,9 @@ begin
 
                 en <= '1';
 
-                shift_en <= '1'; -- Note - Register shift
+                read1_en <= '1';
 
+                shift_en <= '1'; -- Note - Register shift
 
                 next_state <= pre_read_state_4;
 
@@ -179,7 +182,6 @@ begin
 
                 en <= '1';
                 read2_en <= '1';
-                shift_en <= '0';
 
                 next_state <= write_state;
 
@@ -244,16 +246,7 @@ begin
                 shift_en <= '0';
                 en <= '1';
 
-                -- Note: Ensure proper transition to the next state
-                if read_addr_out_2 < 88 then
-                    next_state <= read_state_3;
-                else
-                    next_state <= write_state;
-                end if;
-
-
-
-
+                next_state <= read_state_3;
 
             when write_state =>
                 addr <= std_logic_vector(write_addr_out);
@@ -264,15 +257,20 @@ begin
                 shift_en <= '1'; -- Note: Register shift
                 en <= '1';
                 we <= '1';
-                shift_en <= '0';
 
                 -- Note: We are constantly convoluting thus we don't need to enable separate flag
 
                 if read_addr_out_2 < 88 then --
                     next_state <= read_2_top_row_state;
                 else
-                    next_state <= read_state_1;
+                    if read_addr_out_2 >= 25344 then
+                        next_state <= final_write_word_state;
+                    else
+                        next_state <= read_state_1;
+                    end if;
                 end if;
+
+
 
             when final_write_word_state =>
                 addr <= std_logic_vector(write_addr_out);
@@ -280,7 +278,6 @@ begin
                 we <= '1';
 
                 next_state <= finish_state;
-
 
             when finish_state =>
                 finish <= '1';
