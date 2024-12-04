@@ -166,10 +166,10 @@ begin
     regs_in(6, 1) <= unsigned(fifo1_data_out(15 downto 8));
     regs_in(7, 1) <= unsigned(fifo1_data_out(23 downto 16));
     regs_in(8, 1) <= unsigned(fifo1_data_out(31 downto 24));
-    regs_in(5, 2) <= regs_out(9, 2) when (f_top = '1') else unsigned(fifo2_data_out(7 downto 0));
-    regs_in(6, 2) <= regs_out(10, 2) when (f_top = '1') else unsigned(fifo2_data_out(15 downto 8));
-    regs_in(7, 2) <= regs_out(11, 2) when (f_top = '1') else unsigned(fifo2_data_out(23 downto 16));
-    regs_in(8, 2) <= regs_out(12, 2) when (f_top = '1') else unsigned(fifo2_data_out(31 downto 24));
+    regs_in(5, 2) <= regs_out(9, 2) when (f_top = '1' and f_right = '0') else unsigned(fifo2_data_out(7 downto 0));
+    regs_in(6, 2) <= regs_out(10, 2) when (f_top = '1' and f_right = '0') else unsigned(fifo2_data_out(15 downto 8));
+    regs_in(7, 2) <= regs_out(11, 2) when (f_top = '1' and f_right = '0') else unsigned(fifo2_data_out(23 downto 16));
+    regs_in(8, 2) <= regs_out(12, 2) when (f_top = '1' and f_right = '0') else unsigned(fifo2_data_out(31 downto 24));
     regs_in(5, 3) <= unsigned(dataR(7 downto 0));
     regs_in(6, 3) <= unsigned(dataR(15 downto 8));
     regs_in(7, 3) <= unsigned(dataR(23 downto 16));
