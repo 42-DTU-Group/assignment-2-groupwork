@@ -263,14 +263,8 @@ begin
                 if read_addr_out_2 < 88 then --
                     next_state <= read_2_top_row_state;
                 else
-                    if read_addr_out_2 >= 25344 then
-                        next_state <= final_write_word_state;
-                    else
-                        next_state <= read_state_1;
-                    end if;
+                    next_state <= read_state_1;
                 end if;
-
-
 
             when final_write_word_state =>
                 addr <= std_logic_vector(write_addr_out);
